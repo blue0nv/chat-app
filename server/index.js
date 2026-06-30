@@ -12,3 +12,21 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+let messages = [];
+
+app.post("/messages", (req, res) => {
+    const { text } = req.body;
+
+    const msg = {
+        id: Date.now(),
+        text
+    };
+
+    messages.push(msg);
+    res.json(msg);
+})
+
+app.get("/messages", (req, res) => {
+    res.json(messages);
+})
