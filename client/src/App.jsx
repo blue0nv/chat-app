@@ -2,7 +2,10 @@ import React from "react";
 import { useState } from "react";
 import { useEffect } from "react";
 import { useRef } from "react";
+import { io } from "socket.io-client";
 import "./App.css";
+
+const socket = io("http://localhost:3000")
 
 function App() {
   useEffect(() => {
@@ -14,32 +17,31 @@ function App() {
 
     const [messages, setMessages] = useState([]);
     useEffect(() => {
-      fetch("http://localhost:3000/messages")
-      .then((res) => res.json())
-      .then((data) => {
-        setMessages(data);
-      })
-    }, [])
+      socket.on("initMessages", (msgs) => {
+      setMessages(msgs);
+  });
+
+  socket.on("newMessage", (msg) => {
+    setMessages((prev) => [...prev, msg]);
+  });
+
+  return () => {
+    socket.off("initMessages");
+    socket.off("newMessage");
+  };
+}, []);
   
     const [text, setText] = useState("");
     const sendMessage = () => {
       if (!text.trim()) return;
 
-      fetch("http://localhost:3000/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username,
-          text}),
-      })
-      .then((res) => res.json())
-      .then((newMessage) => {
-        setMessages((prev) => [...prev, newMessage]);
-        setText("");
-      });
-    };
+    socket.emit("sendMessage", {
+      username,
+      text,
+    });
+
+    setText("");
+};
 
     const messageBoxRef = useRef(null)
     useEffect(() => {

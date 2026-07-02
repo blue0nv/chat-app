@@ -1,36 +1,45 @@
-const express = require("express");
-const cors = require("cors");
+import express from "express";
+import http from "http";
+import cors from "cors";
+import { Server } from "socket.io";
 
 const app = express();
-const PORT = 3000;
-
-app.use(express.json());
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-    res.send("Server is running!");
-});
+const server = http.createServer(app);
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+const io = new Server(server, {
+cors: {
+    origin: "http://localhost:5173", 
+    methods: ["GET", "POST"],
+},
 });
 
 let messages = [];
 
-app.post("/messages", (req, res) => {
-    const { text } = req.body;
+io.on("connection", (socket) => {
+    console.log("User connected:", socket.id);
 
-    const msg = {
-        time: Date.now(),
-        username: req.body.username,
-        text: req.body.text,
+
+socket.emit("initMessages", messages);
+
+socket.on("sendMessage", (msg) => {
+    const newMessage = {
+    ...msg,
+    time: Date.now(),
     };
 
-    messages.push(msg);
-    res.json(msg);
-})
+    messages.push(newMessage);
 
-app.get("/messages", (req, res) => {
-    res.json(messages);
-})
+    io.emit("newMessage", newMessage);
+});
+
+socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+});
+});
+
+server.listen(3000, () => {
+    console.log("Server running on 3000");
+});
