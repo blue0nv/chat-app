@@ -22,8 +22,9 @@ app.post("/messages", (req, res) => {
     const { text } = req.body;
 
     const msg = {
-        id: Date.now(),
-        text
+        time: Date.now(),
+        username: req.body.username,
+        text: req.body.text,
     };
 
     messages.push(msg);
