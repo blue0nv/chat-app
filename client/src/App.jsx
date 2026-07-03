@@ -8,6 +8,10 @@ import "./App.css";
 const socket = io("http://localhost:3000")
 
 function App() {
+
+  const [username, setUsername] = useState("");
+  const [usernameInput, setUsernameInput] = useState("");
+
   useEffect(() => {
     fetch("http://localhost:3000/")
       .then((res) => res.text())
@@ -43,15 +47,29 @@ function App() {
     setText("");
 };
 
+    const [users, setUsers] = useState([]);
+    useEffect(() => {
+      if (username) {
+        socket.emit(("join"), username)
+      }
+    }, [username])
+
+    useEffect(() => {
+  socket.on("usersUpdate", (list) => {
+    setUsers(list);
+  });
+
+  return () => {
+    socket.off("usersUpdate");
+  };
+}, []);
+
     const messageBoxRef = useRef(null)
     useEffect(() => {
       if (messageBoxRef.current) {
         messageBoxRef.current.scrollTop = messageBoxRef.current.scrollHeight;
       }
     }, [messages])
-
-    const [username, setUsername] = useState("");
-    const [usernameInput, setUsernameInput] = useState("");
 
     if (!username) {
     return (
@@ -70,6 +88,16 @@ function App() {
   return (
     <div className="container">
 
+    <div className="usersPanel">
+    <h3>Online</h3>
+
+    {users.map((user, i) => (
+      <div key={i} className="userItem">
+        {user}
+      </div>
+    ))}
+  </div>
+
       <div className="chatWindow">
 
       <div className="header">
@@ -78,15 +106,19 @@ function App() {
       </div>
 
       <div className="messageBox" ref={messageBoxRef}>
-      {messages.map((msg) => (
-  <div
-    key={msg.time}
-    className={`messageRow ${
+      {messages.map((msg) =>
+    msg.username === "systemOnlyUpdates" ? (
+    <div key={msg.time} className="systemMessage">
+      {msg.text}
+    </div>
+  ) : (
+    <div
+      key={msg.time}
+      className={`messageRow ${
         msg.username === username ? "own" : "other"
       }`}
     >
       <div className="messageBubble">
-
         <div className="messageHeader">
           <strong>{msg.username}</strong>
           <span className="time">
@@ -96,14 +128,11 @@ function App() {
             })}
           </span>
         </div>
-
-        <div className="messageText">
-          {msg.text}
-        </div>
-
+        <div className="messageText">{msg.text}</div>
       </div>
     </div>
-))}
+  )
+)}
       </div>
 
       <div className="inputRow">

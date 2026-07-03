@@ -96,12 +96,53 @@ button:hover {
     align-items: center;
     background: var(--bg);
     padding: 20px;
-    overflow-y: auto; /* lets you scroll if it still overflows */
+    overflow-y: auto; 
+}
+
+.usersPanel {
+    width: 200px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px 16px;
+    border-right: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.usersPanel h3 {
+    margin: 0 0 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-dim);
+}
+
+.userItem {
+    padding: 9px 12px;
+    margin-top: 6px;
+    border-radius: 8px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    font-size: 13.5px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.userItem::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
 }
 
 .chatWindow {
     width: min(700px, 90vw);
-    height: min(750px, 90vh); /* shrinks to fit shorter screens */
+    height: min(750px, 90vh); 
     background: var(--surface);
     color: var(--text);
     border: 1px solid var(--border);
@@ -141,7 +182,6 @@ button:hover {
     font-weight: 500;
 }
 
-/* MESSAGE AREA */
 .messageBox {
     flex: 1;
     overflow-y: auto;
@@ -167,11 +207,21 @@ button:hover {
     background: var(--accent-dim);
 }
 
-/* MESSAGE ROW */
 .messageRow {
     display: flex;
     width: 100%;
     margin-bottom: 14px;
+}
+
+.systemMessage {
+    align-self: center;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-dim);
+    opacity: 0.6;
+    text-align: center;
+    margin: 6px 0;
+    letter-spacing: 0.2px;
 }
 
 .messageRow.own {
@@ -182,7 +232,6 @@ button:hover {
     justify-content: flex-start;
 }
 
-/* MESSAGE BUBBLE */
 .messageBubble {
     max-width: 70%;
     padding: 11px 15px;
@@ -202,7 +251,6 @@ button:hover {
     border-bottom-left-radius: 4px;
 }
 
-/* HEADER INSIDE MESSAGE */
 .messageHeader {
     display: flex;
     justify-content: space-between;
@@ -234,14 +282,12 @@ button:hover {
     flex-shrink: 0;
 }
 
-/* MESSAGE TEXT */
 .messageText {
     word-wrap: break-word;
     line-height: 1.45;
     font-size: 14.5px;
 }
 
-/* INPUT AREA */
 .inputRow {
     display: flex;
     gap: 10px;
@@ -285,7 +331,6 @@ button:hover {
     color: var(--text);
 }
 
-/* RESPONSIVE */
 @media (max-width: 480px) {
     .chatWindow {
         height: 92vh;
