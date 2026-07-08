@@ -5,12 +5,40 @@ import { useRef } from "react";
 import { io } from "socket.io-client";
 import "./App.css";
 
-const socket = io("http://localhost:3000")
-
 function App() {
 
   const [username, setUsername] = useState("");
   const [usernameInput, setUsernameInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState("");
+  const [users, setUsers] = useState([]);
+  const [token, setToken] = useState(null);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const socketRef = useRef(null);
+
+  useEffect(() => {
+    if (!token) return;
+
+    socketRef.current = io("http://localhost:3000", {
+      auth: {token},
+    });
+
+    socketRef.current.on("initMessages", (msgs) => {
+      setMessages(msgs);
+    });
+
+    socketRef.current.on("newMessage", (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+
+    socketRef.current.on("usersUpdate", (list) => {
+      setUsers(list);
+    });
+
+    socketRef.current.emit("join");
+
+  }, [token]);
 
   useEffect(() => {
     fetch("http://localhost:3000/")
@@ -19,70 +47,87 @@ function App() {
       .catch((err) => console.error(err));
   }, []);
 
-    const [messages, setMessages] = useState([]);
-    useEffect(() => {
-      socket.on("initMessages", (msgs) => {
-      setMessages(msgs);
-  });
-
-  socket.on("newMessage", (msg) => {
-    setMessages((prev) => [...prev, msg]);
-  });
-
-  return () => {
-    socket.off("initMessages");
-    socket.off("newMessage");
-  };
-}, []);
-  
-    const [text, setText] = useState("");
-    const sendMessage = () => {
-      if (!text.trim()) return;
-
-    socket.emit("sendMessage", {
-      username,
-      text,
+  const handleLogin = async () => {
+    const res = await fetch("http://localhost:3000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: usernameInput, password: passwordInput }),
     });
 
+    if (!res.ok) {
+        console.log("login failed");
+        return;
+    }
+
+    const data = await res.json();
+    setToken(data.token);
+    setUsername(usernameInput);
+};
+
+  const handleReg = async () => {
+    const res = await fetch("http://localhost:3000/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify( { username: usernameInput, password: passwordInput }),
+    });
+
+    if (!res.ok) {
+      console.log("Register failed");
+      return;
+    }
+
+    await handleLogin()
+  };
+  
+  const sendMessage = () => {
+    if (!text.trim()) return;
+
+    socketRef.current.emit("sendMessage", { text });
     setText("");
 };
 
-    const [users, setUsers] = useState([]);
-    useEffect(() => {
-      if (username) {
-        socket.emit(("join"), username)
-      }
-    }, [username])
-
-    useEffect(() => {
-  socket.on("usersUpdate", (list) => {
-    setUsers(list);
-  });
-
-  return () => {
-    socket.off("usersUpdate");
-  };
-}, []);
-
-    const messageBoxRef = useRef(null)
+  const messageBoxRef = useRef(null)
     useEffect(() => {
       if (messageBoxRef.current) {
         messageBoxRef.current.scrollTop = messageBoxRef.current.scrollHeight;
       }
     }, [messages])
 
-    if (!username) {
+  if (!username) {
     return (
-      <div>
-        <h2>Join Chat</h2>
-        <input
-          type="text"
-          placeholder="Username"
-          value={usernameInput}
-          onChange={(e) => setUsernameInput(e.target.value)}/>
-        <button onClick={() => setUsername(usernameInput)}>Join</button>
-      </div>
-  );
+        <div className="authContainer">
+            <div className="authCard">
+                <h2>{isRegistering ? "Create Account" : "Welcome Back"}</h2>
+                <p className="authSubtitle">
+                    {isRegistering ? "Join the conversation" : "Sign in to continue chatting"}
+                </p>
+
+                <input
+                    type="text"
+                    placeholder="Username"
+                    value={usernameInput}
+                    onChange={(e) => setUsernameInput(e.target.value)}
+                />
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                />
+
+                <button onClick={isRegistering ? handleReg : handleLogin}>
+                    {isRegistering ? "Register" : "Login"}
+                </button>
+
+                <p className="authToggle">
+                    {isRegistering ? "Already have an account? " : "Don't have an account? "}
+                    <span onClick={() => setIsRegistering(!isRegistering)}>
+                        {isRegistering ? "Login" : "Register"}
+                    </span>
+                </p>
+            </div>
+        </div>
+    );
 }
 
   return (
