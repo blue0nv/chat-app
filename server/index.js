@@ -152,11 +152,28 @@ app.post("/login", async (req, res) => {
 
         const token = jwt.sign({username: user.username}, SECRET_KEY, {expiresIn: "7d"});
         res.json({token});
+
     } catch (error) {
         console.log(error); 
         res.status(500).send("An error has occured");
     }
 })
+
+app.get("/me", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(" ")[1];
+
+    if (!token) {
+        return res.status(401).send("Invalid token");
+    }
+
+    try {
+        const verify = jwt.verify(token, SECRET_KEY);
+        res.json({username: verify.username});
+    } catch {
+        return res.status(401).send("Verification failed");
+    }
+});
 
 server.listen(3000, () => {
     console.log("Server running on 3000");

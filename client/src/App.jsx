@@ -12,6 +12,7 @@ function App() {
   const [passwordInput, setPasswordInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
+  const [authError, setAuthError] = useState("");
   const [users, setUsers] = useState([]);
   const [token, setToken] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -41,6 +42,29 @@ function App() {
   }, [token]);
 
   useEffect(() => {
+    const checkToken = async () => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await fetch("http://localhost:3000/me", {
+            method: "GET",
+            headers: { "Authorization": `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+            localStorage.removeItem("token");
+            return;
+        }
+
+        const data = await res.json(); 
+        setToken(token);
+        setUsername(data.username);
+    };
+
+    checkToken();
+}, []);
+
+  useEffect(() => {
     fetch("http://localhost:3000/")
       .then((res) => res.text())
       .then((data) => console.log(data))
@@ -55,12 +79,15 @@ function App() {
     });
 
     if (!res.ok) {
-        console.log("login failed");
-        return;
+      const errorText = await res.text();
+      setAuthError(errorText);
+      return;
     }
 
+    setAuthError("");
     const data = await res.json();
     setToken(data.token);
+    localStorage.setItem("token", data.token)
     setUsername(usernameInput);
 };
 
@@ -72,10 +99,12 @@ function App() {
     });
 
     if (!res.ok) {
-      console.log("Register failed");
+      const errorText = await res.text();
+      setAuthError(errorText);
       return;
     }
 
+    setAuthError("");
     await handleLogin()
   };
   
@@ -102,6 +131,8 @@ function App() {
                     {isRegistering ? "Join the conversation" : "Sign in to continue chatting"}
                 </p>
 
+                {authError && <p className="authError">{authError}</p>}
+
                 <input
                     type="text"
                     placeholder="Username"
@@ -121,9 +152,8 @@ function App() {
 
                 <p className="authToggle">
                     {isRegistering ? "Already have an account? " : "Don't have an account? "}
-                    <span onClick={() => setIsRegistering(!isRegistering)}>
-                        {isRegistering ? "Login" : "Register"}
-                    </span>
+                    <span onClick={() => { setIsRegistering(!isRegistering); setAuthError(""); }}>
+                      {isRegistering ? "Login" : "Register"} </span>
                 </p>
             </div>
         </div>
