@@ -13,6 +13,7 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [authError, setAuthError] = useState("");
+  const [typingUsers, setTypingUsers] = useState([]);
   const [users, setUsers] = useState([]);
   const [token, setToken] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -38,6 +39,16 @@ function App() {
     });
 
     socketRef.current.emit("join");
+
+    socketRef.current.on("userTyping", ({username, isTyping}) => {
+      if (isTyping) {
+        setTypingUsers((prev) => [...prev, username]);
+      }
+
+      else {
+        setTypingUsers((prev) => prev.filter((name) => name != username));
+      }
+    });
 
   }, [token]);
 
@@ -114,6 +125,13 @@ function App() {
     socketRef.current.emit("sendMessage", { text });
     setText("");
 };
+
+  const renderTypers = () => {
+    if (typingUsers.length === 0) return "";
+    else if (typingUsers.length === 1) return `${typingUsers[0]} is typing...`;
+    else if (typingUsers.length === 2) return `${typingUsers[0]} and ${typingUsers[1]} are typing...`;
+    else return `${typingUsers[0]}, ${typingUsers[1]}, and others are typing...`;
+  };
 
   const messageBoxRef = useRef(null)
     useEffect(() => {
@@ -210,10 +228,19 @@ function App() {
 )}
       </div>
 
+      {typingUsers.length > 0 && (
+    <div className="typingIndicator">
+        {renderTypers()}
+    </div>
+)}
+
       <div className="inputRow">
       <input
       value={text}
-      onChange={(e) => setText(e.target.value)}
+      onChange={(e) => {
+        setText(e.target.value);
+        socketRef.current.emit("typing");
+      }}
       placeholder="Type a message..."
       onKeyDown={ (e) => {
         if (e.key === "Enter") {

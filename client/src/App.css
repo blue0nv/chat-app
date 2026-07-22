@@ -440,3 +440,13 @@ button:hover {
         padding-right: 16px;
     }
 }
+
+.typingIndicator {
+    padding: 4px 26px 10px;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.2px;
+    flex-shrink: 0;
+}

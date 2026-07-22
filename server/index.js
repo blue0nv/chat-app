@@ -22,7 +22,10 @@ cors: {
 },
 });
 
-let users = {};
+let socketToUser = {};
+let userToSocket = {};
+let pendingLeaves = {};
+let typing = {};
 
 db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -51,16 +54,27 @@ io.on("connection", (socket) => {
     socket.emit("initMessages", rows);
 
     socket.on("join", () => {
-        users[socket.id] = socket.username;
-        io.emit("usersUpdate", Object.values(users));
+        const user = socket.username;
 
-        const systemMsg = {
-            username: "systemOnlyUpdates",
-            text: `${socket.username} joined the chat`,
-            time: Date.now(),
+        socketToUser[socket.id] = user;
+        userToSocket[user] = socket.id;
+
+        if (pendingLeaves[user]) {
+            clearTimeout(pendingLeaves[user]);
+            delete pendingLeaves[user];
+        }
+
+        else {
+            const systemMsg = {
+                username: "systemOnlyUpdates",
+                text: `${socket.username} joined the chat`,
+                time: Date.now(),
         };
-        insertMessage.run(systemMsg.username, systemMsg.text, systemMsg.time);
-        io.emit("newMessage", systemMsg);
+            insertMessage.run(systemMsg.username, systemMsg.text, systemMsg.time);
+            io.emit("newMessage", systemMsg);
+        }
+
+        io.emit("usersUpdate", Object.keys(userToSocket));
     });
 
     socket.on("sendMessage", (msg) => {
@@ -74,22 +88,45 @@ io.on("connection", (socket) => {
         io.emit("newMessage", newMessage);
     });
 
+    socket.on("typing", () => {
+        const user = socketToUser[socket.id];
+
+        if (!user) return;
+
+        if (!typing[user]) {
+            socket.broadcast.emit("userTyping", { username: user, isTyping: true});
+        }
+
+        clearTimeout(typing[user]);
+
+        typing[user] = setTimeout(() => {
+            delete typing[user];
+            socket.broadcast.emit("userTyping", { username: user, isTyping: false});
+        }, 2000);
+    });
+
     socket.on("disconnect", () => {
         console.log("User disconnected:", socket.id);
 
-        const username = users[socket.id];
-        delete users[socket.id];
-        io.emit("usersUpdate", Object.values(users));
+        const user = socketToUser[socket.id];
+        delete socketToUser[socket.id];
 
-        if (username) {
+        if (!user) return;
+        
+        pendingLeaves[user] = setTimeout(() => {
             const systemMsg = {
             username: "systemOnlyUpdates",
-            text: `${username} left the chat`,
+            text: `${user} left the chat`,
             time: Date.now(),
         };
             insertMessage.run(systemMsg.username, systemMsg.text, systemMsg.time);
             io.emit("newMessage", systemMsg);
-        }
+
+            delete userToSocket[user];
+            delete pendingLeaves[user];
+
+            io.emit("usersUpdate", Object.keys(userToSocket));
+        }, 10000);
     });
 });
 
