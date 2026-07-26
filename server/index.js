@@ -1,3 +1,4 @@
+import "dotenv/config"
 import express from "express";
 import http from "http";
 import cors from "cors";
@@ -7,7 +8,7 @@ import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import { Server } from "socket.io";
 
-const SECRET_KEY = "abcdefghijklmnoqureskfdafdjklsg";
+const SECRET_KEY = process.env.SECRET_KEY;
 
 const app = express();
 app.use(cors());
