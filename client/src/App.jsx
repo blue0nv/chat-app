@@ -118,6 +118,18 @@ function App() {
     setAuthError("");
     await handleLogin()
   };
+
+  const handleLogout = () => {
+    socketRef.current.emit("leave");
+    socketRef.current.disconnect();
+
+    localStorage.removeItem("token");
+    setToken(null);
+    setUsername("");
+    setMessages([]);
+    setUsers([]);
+    setTypingUsers([]);
+};
   
   const sendMessage = () => {
     if (!text.trim()) return;
@@ -194,9 +206,12 @@ function App() {
       <div className="chatWindow">
 
       <div className="header">
-      <h1>Chat App</h1>
-      <h5>Logged in as: <strong>{username}</strong></h5>
-      </div>
+    <div className="headerInfo">
+        <h1>Chat App</h1>
+        <h5>Logged in as: <strong>{username}</strong></h5>
+    </div>
+    <button className="logoutButton" onClick={handleLogout}>Logout</button>
+</div>
 
       <div className="messageBox" ref={messageBoxRef}>
       {messages.map((msg) =>

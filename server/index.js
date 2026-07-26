@@ -4,6 +4,7 @@ import cors from "cors";
 import bcrypt from "bcrypt";
 import  Database  from "better-sqlite3";
 import jwt from "jsonwebtoken";
+import rateLimit from "express-rate-limit";
 import { Server } from "socket.io";
 
 const SECRET_KEY = "abcdefghijklmnoqureskfdafdjklsg";
@@ -20,6 +21,12 @@ cors: {
     origin: "http://localhost:5173", 
     methods: ["GET", "POST"],
 },
+});
+
+const rateLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 10,
+    message: "Too many attempts, try again later",
 });
 
 let socketToUser = {};
@@ -46,6 +53,21 @@ db.exec(`
 `);
 
 const insertMessage = db.prepare("INSERT INTO messages (sender, text, sent_at) VALUES (?, ?, ?)");
+
+function announceLeave(user) {
+    const systemMsg = {
+        username: "systemOnlyUpdates",
+        text: `${user} left the chat`,
+        time: Date.now(),
+    };
+    insertMessage.run(systemMsg.username, systemMsg.text, systemMsg.time);
+    io.emit("newMessage", systemMsg);
+
+    delete userToSocket[user];
+    delete pendingLeaves[user];
+
+    io.emit("usersUpdate", Object.keys(userToSocket));
+}
 
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
@@ -114,20 +136,20 @@ io.on("connection", (socket) => {
         if (!user) return;
         
         pendingLeaves[user] = setTimeout(() => {
-            const systemMsg = {
-            username: "systemOnlyUpdates",
-            text: `${user} left the chat`,
-            time: Date.now(),
-        };
-            insertMessage.run(systemMsg.username, systemMsg.text, systemMsg.time);
-            io.emit("newMessage", systemMsg);
-
-            delete userToSocket[user];
-            delete pendingLeaves[user];
-
-            io.emit("usersUpdate", Object.keys(userToSocket));
+            announceLeave(user);
         }, 10000);
     });
+
+    socket.on("leave", () => {
+        const user = socketToUser[socket.id];
+
+        if (!user) return;
+        if (pendingLeaves[user]) {
+            clearTimeout(pendingLeaves[user]);
+        }
+
+        announceLeave(user);
+    })
 });
 
 io.use((socket, next) => {
@@ -144,7 +166,7 @@ io.use((socket, next) => {
     }
 });
 
-app.post("/register", async (req, res) => {
+app.post("/register", rateLimiter, async (req, res) => {
     try {
         const {username, password} = req.body;
 
@@ -167,7 +189,7 @@ app.post("/register", async (req, res) => {
     }
 })
 
-app.post("/login", async (req, res) => {
+app.post("/login", rateLimiter, async (req, res) => {
     try {
         const {username, password} = req.body;
 

@@ -171,25 +171,43 @@ body {
     padding: 14px 20px;
     border-bottom: 1px solid #dddfe2;
     flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.header h1 {
+.headerInfo h1 {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
     color: #050505;
 }
 
-.header h5 {
+.headerInfo h5 {
     margin: 3px 0 0;
     color: #65676b;
     font-size: 13px;
     font-weight: 400;
 }
 
-.header h5 strong {
+.headerInfo h5 strong {
     color: #050505;
     font-weight: 600;
+}
+
+.logoutButton {
+    padding: 8px 14px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    background: #f0f2f5;
+    color: #050505;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.logoutButton:hover {
+    background: #e4e6eb;
 }
 
 /* MESSAGE AREA */
