@@ -22,7 +22,7 @@ function App() {
   useEffect(() => {
     if (!token) return;
 
-    socketRef.current = io("http://localhost:3000", {
+    socketRef.current = io(import.meta.env.VITE_SERVER_URL, {
       auth: {token},
     });
 
@@ -57,7 +57,7 @@ function App() {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const res = await fetch("http://localhost:3000/me", {
+        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/me`, {
             method: "GET",
             headers: { "Authorization": `Bearer ${token}` },
         });
@@ -76,14 +76,14 @@ function App() {
 }, []);
 
   useEffect(() => {
-    fetch("http://localhost:3000/")
+    fetch(`${import.meta.env.VITE_SERVER_URL}`)
       .then((res) => res.text())
       .then((data) => console.log(data))
       .catch((err) => console.error(err));
   }, []);
 
   const handleLogin = async () => {
-    const res = await fetch("http://localhost:3000/login", {
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: usernameInput, password: passwordInput }),
@@ -103,7 +103,7 @@ function App() {
 };
 
   const handleReg = async () => {
-    const res = await fetch("http://localhost:3000/register", {
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify( { username: usernameInput, password: passwordInput }),

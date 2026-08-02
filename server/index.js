@@ -9,6 +9,7 @@ import rateLimit from "express-rate-limit";
 import { Server } from "socket.io";
 
 const SECRET_KEY = process.env.SECRET_KEY;
+const PORT = process.env.PORT || 3000;
 
 const app = express();
 app.use(cors());
@@ -19,7 +20,7 @@ const db = new Database("chat.db")
 
 const io = new Server(server, {
 cors: {
-    origin: "http://localhost:5173", 
+    origin: process.env.CLIENT_URL, 
     methods: ["GET", "POST"],
 },
 });
@@ -235,6 +236,6 @@ app.get("/me", async (req, res) => {
     }
 });
 
-server.listen(3000, () => {
-    console.log("Server running on 3000");
+server.listen(PORT, () => {
+    console.log(`Server running on ${PORT}`);
 });
